@@ -6,8 +6,8 @@ postgres:
   db: "mlflowdb"
 
 mlflow:
-  imageName: "amitgupta2533/mlflow-microservice"
-  tag: "v2.17.2"
+  imageName: "amitgupta2533/mlflow"
+  tag: "2.17.2"
 
 secrets:
   minioRootUser: "mlflow-secrets"

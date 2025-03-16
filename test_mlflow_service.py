@@ -8,7 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 # Set our tracking server uri for logging
-mlflow.set_tracking_uri(uri="http://34.59.34.22:5000/")
+mlflow.set_tracking_uri(uri="http://34.134.227.7:5000/")
 
 
 # Load the Iris dataset 

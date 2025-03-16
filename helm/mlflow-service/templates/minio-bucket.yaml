@@ -29,11 +29,6 @@ spec:
               mc alias set local http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD;
               # Create the bucket
               mc mb local/{{ .Values.minio.bucket }} || echo "Bucket already exists";
-          # env:
-          #   - name: MINIO_ROOT_USER
-          #     value: "minio_admin"
-          #   - name: MINIO_ROOT_PASSWORD
-          #     value: "minio_password"
           env:
             - name: MINIO_ROOT_USER
               valueFrom:
