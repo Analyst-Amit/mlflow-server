@@ -1,0 +1,30 @@
+.venv
+minio
+mlflow
+postgres
+
+# Helm release and temporary files
+*.tgz
+charts/
+tmpcharts/
+requirements.lock
+
+# Helm plugins
+.helm/plugins/
+
+# YAML Lint Cache (if using yamllint)
+.yamllint_cache
+
+# IDE-specific files (adjust based on your IDE)
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS-specific files
+.DS_Store
+Thumbs.db

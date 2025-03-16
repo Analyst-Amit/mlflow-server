@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-bucket
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: create-bucket
+          image: alpine:latest
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              # Install curl and MinIO Client (mc)
+              apk update && apk add curl bash
+              curl -sL https://dl.minio.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
+              chmod +x /usr/local/bin/mc
+              
+              # Wait for MinIO to be ready
+              echo "Waiting for MinIO to be ready..."
+              until curl -s http://minio:9000/minio/health/ready > /dev/null; do
+                sleep 5;
+              done;
+              echo "MinIO is ready. Proceeding to create bucket...";
+              
+              # Set MinIO Client alias (mc)
+              mc alias set local http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD;
+              # Create the bucket
+              mc mb local/{{ .Values.minio.bucket }} || echo "Bucket already exists";
+          # env:
+          #   - name: MINIO_ROOT_USER
+          #     value: "minio_admin"
+          #   - name: MINIO_ROOT_PASSWORD
+          #     value: "minio_password"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.minioRootUser }}
+                  key: minio-rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.minioRootPassword }}
+                  key: minio-rootPassword
+
+      restartPolicy: Never

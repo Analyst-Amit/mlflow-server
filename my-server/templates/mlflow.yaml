@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-deployment
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: {{ .Values.mlflow.imageName }}:{{ .Values.mlflow.tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: "{{ .Values.minio.server }}"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.minioRootUser }}
+                  key: minio-rootUser
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.minioRootPassword }}
+                  key: minio-rootPassword
+            - name: POSTGRES_DB
+              value: "{{ .Values.postgres.db }}"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgresUser }}
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgresPassword }}
+                  key: postgres-password
+          args:
+            - "mlflow"
+            - "server"
+            - "--backend-store-uri"
+            - "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.database.svc.cluster.local:5432/{{ .Values.postgres.db }}"
+            - "--artifacts-destination"
+            - "s3://{{ .Values.minio.bucket }}"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "5000"
+
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "500m"
+            limits:
+              memory: "1500Mi"
+              cpu: "700m"
+          volumeMounts:
+            - name: mlflow-volume
+              mountPath: /mlflow
+      volumes:
+        - name: mlflow-volume
+          emptyDir: {}  # Use an emptyDir volume for local artifact storage (it will be ephemeral)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 5000
+      targetPort: 5000
+  selector:
+    app: mlflow
+

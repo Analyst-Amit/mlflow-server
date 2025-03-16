@@ -1,0 +1,20 @@
+minio:
+  server: "http://minio.database.svc.cluster.local:9000"
+  bucket: "mlops-windoutput-bucket"
+
+postgres:
+  db: "mlflowdb"
+
+mlflow:
+  imageName: "amitgupta2533/mlflow-microservice"
+  tag: "v2.17.2"
+
+secrets:
+  minioRootUser: "mlflow-secrets"
+  minioRootPassword: "mlflow-secrets"
+  postgresUser: "mlflow-secrets"
+  postgresPassword: "mlflow-secrets"
+
+service:
+  port: 8080  # Define the service port for testing
+

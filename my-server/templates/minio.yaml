@@ -1,0 +1,97 @@
+# Deploys a new Namespace for the MinIO Pod
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: minio
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: minio
+      labels:
+        app: minio
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:  # Use the PVC here
+            claimName: minio-pvc  # Reference the PVC created earlier
+      containers:
+        - name: minio
+          image: quay.io/minio/minio:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_SERVER
+              value: "{{ .Values.minio.server }}"
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.minioRootUser }}
+                  key: minio-rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.minioRootPassword }}
+                  key: minio-rootPassword
+
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "1000Mi"
+              cpu: "600m"
+            limits:
+              memory: "1500Mi"
+              cpu: "800m"
+          volumeMounts:
+            - mountPath: /data
+              name: data  # Mount the volume using PVC
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9090"
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: minio
+  ports:
+    - port: 9090
+      name: console
+    - port: 9000
+      name: s3
+  type: LoadBalancer
