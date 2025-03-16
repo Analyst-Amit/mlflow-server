@@ -1,6 +1,6 @@
 .venv
 minio
-mlflow
+
 postgres
 
 # Helm release and temporary files
